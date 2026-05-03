@@ -1,18 +1,15 @@
 from dotenv import load_dotenv
-import google.generativeai as genai
+from groq import Groq
 import streamlit as st
 import os
 
 load_dotenv()
 try:
-    api_key = st.secrets["API_KEY"]
+    api_key = st.secrets["GROQ_API_KEY"]
 except:
-    api_key = os.getenv("API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
 
-genai.configure(api_key=api_key)
-
-generation_config = {"temperature": 0.9, "top_p": 1, "top_k": 1, "max_output_tokens": 2048 }
-model = genai.GenerativeModel("gemini-2.0-flash-lite", generation_config=generation_config)
+client = Groq(api_key=api_key)
 
 st.title("Fake News Analyzer")
 st.text("Paste any news headline, paragraph or article to verify its authenticity")
@@ -40,10 +37,13 @@ News to analyze:
             progress.progress(50, text="Checking facts...")
             progress.progress(75, text="Generating verdict...")
             try:
-                response = model.generate_content([prompt])
+                response = client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[{"role": "user", "content": prompt}]
+                )
                 progress.progress(100, text="Done!")
                 progress.empty()
-                response_text = response.text
+                response_text = response.choices[0].message.content
                 if "FAKE" in response_text:
                     st.error("🔍 VERDICT: FAKE")
                 elif "REAL" in response_text:
@@ -52,18 +52,32 @@ News to analyze:
                     st.warning("🔍 VERDICT: MISLEADING")
                 else:
                     st.info("🔍 VERDICT: UNVERIFIED")
-                sections = {
-                    "📊 CONFIDENCE LEVEL": "CONFIDENCE LEVEL",
-                    "📝 REASON": "REASON",
-                    "🚩 RED FLAGS": "RED FLAGS",
-                    "✅ SUGGESTION": "SUGGESTION"
-                }
-                for label, key in sections.items():
+
+                col1, col2 = st.columns(2)
+                col3, col4 = st.columns(2)
+
+                def extract(key):
                     for line in response_text.split("\n"):
                         if key in line:
-                            st.markdown(f"**{label}**")
-                            st.write(line.split(":", 1)[-1].strip())
-                            st.divider()
+                            return line.split(":", 1)[-1].strip()
+                    return ""
+
+                with col1:
+                    st.markdown("**📊 CONFIDENCE LEVEL**")
+                    st.write(extract("CONFIDENCE LEVEL"))
+
+                with col2:
+                    st.markdown("**📝 REASON**")
+                    st.write(extract("REASON"))
+
+                with col3:
+                    st.markdown("**🚩 RED FLAGS**")
+                    st.write(extract("RED FLAGS"))
+
+                with col4:
+                    st.markdown("**✅ SUGGESTION**")
+                    st.write(extract("SUGGESTION"))
+                            
             except Exception as e:
                 progress.empty()
                 if "429" in str(e) or "quota" in str(e).lower() or "ResourceExhausted" in str(e):
