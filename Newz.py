@@ -11,11 +11,11 @@ except:
 
 genai.configure(api_key=api_key)
 
-generation_config = {"temperature": 0.9, "top_p": 1, "top_k": 1, "max_output_tokens": 2048}
-model = genai.GenerativeModel("gemini-2.5-flash", generation_config=generation_config)
+generation_config = {"temperature": 0.9, "top_p": 1, "top_k": 1, "max_output_tokens": 2048 }
+model = genai.GenerativeModel("gemini-2.0-flash-lite", generation_config=generation_config)
 
 st.title("Fake News Analyzer")
-st.text("Copy Paste the paragraph, line or the article in the chat")
+st.text("Paste any news headline, paragraph or article to verify its authenticity")
 
 news = st.text_area("Enter Here")
 
