@@ -1,7 +1,7 @@
-from dotenv import load_dotenv
-from groq import Groq
 import streamlit as st
 import os
+from dotenv import load_dotenv
+from groq import Groq
 
 load_dotenv()
 try:
@@ -38,9 +38,10 @@ News to analyze:
             progress.progress(75, text="Generating verdict...")
             try:
                 response = client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
+                    model="openai/gpt-oss-20b",
                     messages=[{"role": "user", "content": prompt}]
                 )
+
                 progress.progress(100, text="Done!")
                 progress.empty()
                 response_text = response.choices[0].message.content
